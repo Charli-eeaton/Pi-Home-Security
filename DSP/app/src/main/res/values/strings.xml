@@ -1,5 +1,4 @@
 <resources>
-    <string name="app_name">DSP</string>
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password</string>
@@ -11,13 +10,9 @@
     <string name="login_failed">"Login failed"</string>
     <string name="edit_alert_period">Edit Alert Period</string>
     <string name="view_alerts">View Alerts</string>
-    <string name="video_library">Video libary</string>
+    <string name="video_library">Library</string>
     <string name="live_video_feed">Live video feed</string>
-    <string name="title_activity_live_video_feed">FullscreenActivity</string>
     <string name="snapshot">Take Snapshot</string>
     <string name="back">Main Menu</string>
     <string name="recording">Start Recording</string>
-    <string name="title_activity_fullscreen">FullscreenActivity</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>

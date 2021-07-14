@@ -30,6 +30,7 @@ public class MainMenu extends AppCompatActivity {
         liveVideoFeedButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainMenu.this, liveVideoFeed.class);
             startActivity(intent);
+
         });
         libraryButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainMenu.this, Library.class);

@@ -14,6 +14,6 @@ public class Library extends AppCompatActivity {
 
         //Set webview to media folder
         WebView activity_library = (WebView) findViewById(R.id.media);
-        activity_library.loadUrl("http://192.168.0.29/library");
+        activity_library.loadUrl("http://raspberrypi.local/library");
     }
 }

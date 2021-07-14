@@ -12,9 +12,9 @@ public class Alerts extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alerts);
 
-        //Set webview to log file
+        //Set "webview" to log file
         WebView activity_alerts = (WebView) findViewById(R.id.log);
-        activity_alerts.loadUrl("http://192.168.0.29/log.txt");
+        activity_alerts.loadUrl("http://raspberrypi.local/log.txt");
 
     }
 }
