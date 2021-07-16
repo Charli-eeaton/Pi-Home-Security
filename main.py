@@ -1,6 +1,8 @@
 import RPi.GPIO as GPIO
 import socketserver
 import logging
+import _thread
+import threading
 import time
 import glob
 import os
@@ -15,7 +17,7 @@ from http import server
 camera = PiCamera()
 camera.framerate = 24
 camera.resolution='720x480'
-
+address = ('', 8000)
 
 #Create a glob of all video & photos
 photos = glob.glob('media/photos/*.jpg')
@@ -135,47 +137,44 @@ def write_to_file(t):
     log.writelines(t)
     log.write('\n')
     log.close()
-    
-    
+
 #main
-while True:
-    camera.start_preview()
-    PIR=GPIO.input(8)
-    MAG=GPIO.input(40)
-    t = "NONE"
-    local = ""
-    time.sleep(1)
-    #Begin live stream
-    with camera:
-        output = StreamingOutput()
-        camera.start_recording(output, format='mjpeg')
-        try:
-            address = ('', 8000)
-            server = StreamingServer(address, StreamingHandler)
-            server.serve_forever()
-        finally:
-            camera.stop_recording()
+def main():
+    while True:
+        camera.start_preview()
+        PIR=GPIO.input(8)
+        MAG=GPIO.input(40)
 
-    if PIR==0 and MAG==0:
-        t = ("Nope Nobody",time.asctime())
-        
-
-    if PIR==1 or MAG==1:
-
-        if PIR==1 and MAG==1: #if PIR sensor & MAG switch is high
-            t = ("PERSON DETECTED AND MAG OPEN AT ",time.asctime())
-
-        elif PIR==1: #if PIR sensor is high write to log file
-            t = ("PERSON DETECTED AT ",time.asctime())
+        if PIR==0 and MAG==0:
+            t = ("Nope Nobody",time.asctime())
             
+        #If either sensor is tripped
+        elif PIR==1 or MAG==1:
+            #camera.stop_recording()
 
-        elif MAG==1: #if MAG switch is high write to log file
-            t = ("MAG OPEN AT ",time.asctime())
+            if PIR==1 and MAG==1: #if PIR sensor & MAG switch is high
+                t = ("PERSON DETECTED AND MAG OPEN AT ",time.asctime())
+
+            elif PIR==1: #if PIR sensor is high write to log file
+                t = ("PERSON DETECTED AT ",time.asctime())
+                
+
+            elif MAG==1: #if MAG switch is high write to log file
+                t = ("MAG OPEN AT ",time.asctime())
+
+            snapshot()
+            #vidClip()
 
         write_to_file(t)
-        snapshot()
-        time.sleep(0.1)
-        vidClip()
-        camera.stop_preview()
         update_web()
+        time.sleep(1)
 
+
+#Start the main thread
+_thread.start_new_thread(main, tuple())
+
+#Begin live stream
+output = StreamingOutput()  
+camera.start_recording(output, format='mjpeg')
+server = StreamingServer(address, StreamingHandler)
+server.serve_forever()
