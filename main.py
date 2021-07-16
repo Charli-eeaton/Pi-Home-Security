@@ -1,24 +1,40 @@
 import RPi.GPIO as GPIO
 import socketserver
 import logging
+import thread
 import time
 import glob
 import os
 import io
-#import picamera
 from threading import Condition
 from picamera import PiCamera
 from dominate import document
 from dominate.tags import *
 from http import server
 
+
+camera = PiCamera()
+camera.framerate = 24
+camera.resolution='720x480'
+
+#Create a glob of all video & photos
+photos = glob.glob('media/photos/*.jpg')
+videos = glob.glob('media/videos/*.mp4')
+
+#Initalise GPIO
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(11, GPIO.IN)         #Read output from PIR motion sensor
+GPIO.setup(13, GPIO.IN)         #Read output from magnetic door switch
+
+#Create webpage for livestreaming
 PAGE="""\
 <html>
 <center><img src="stream.mjpg" width="720" height="480"></center>
 </body>
 </html>
 """
-
+##Code required for supporting streaming
 class StreamingOutput(object):
     def __init__(self):
         self.frame = None
@@ -79,45 +95,32 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-camera = PiCamera()
-camera.framerate = 24
-camera.resolution='720x480'
-
-#Create a glob of all video & photos
-photos = glob.glob('media/photos/*.jpg')
-videos = glob.glob('media/videos/*.mp4')
-
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(11, GPIO.IN)         #Read output from PIR motion sensor
-GPIO.setup(13, GPIO.IN)         #Read output from magnetic door switch
-
-    
-
+#function for taking a still image
 def snapshot():
-    local = "/var/www/html/media/photos/" + str(time.asctime()) + ".jpg"
+    local = "/var/www/html/media/photos/" + str(time.asctime()) + ".jpg"#path to save image with current Date & Time added
     camera.capture(local)
 
 def vidClip():
-    local = "/var/www/html/media/videos/" + str(time.asctime()) + ".h264"
+    local = "/var/www/html/media/videos/" + str(time.asctime()) + ".h264"#path to save video with current Date & Time added
     camera.start_recording(local)
-    time.sleep(5)
+    time.sleep(5) #How long of a clip to record
     camera.stop_recording()
     os.system('for i in /var/www/html/media/videos/*.h264; do ffmpeg -i "$i" "${i%.*}.mp4"; done ; rm /var/www/html/media/videos/*.h264') #Convert H264 files to mp4 for web play
 
-def update_web(): #Update the webpage with new images
+#Update the webpage with new images and video
+def update_web(): 
     with document(title='library') as doc:
-        meta(name="viewport", content="width=device-width", scale="1.0")
+        meta(name="viewport", content="width=device-width", scale="1.0") #set web page scale to that of the device
         
-        h1('Photos')
-        for path in photos:
+        h1('Photos') 
+        for path in photos: #auto generate web page with all the files in the photos folder
             humanReadPath = path.replace("media/photos/","")
             humanReadPath = humanReadPath.replace(".jpg","")
             div(h4(humanReadPath))
             div(img(src=path), _class='photo')
 
         h1('Videos')
-        for path in videos:
+        for path in videos: #auto generate web page with all the files in the video folder
             humanReadPath = path.replace("media/videos/","")
             humanReadPath = humanReadPath.replace(".mp4","")
             div(h4(humanReadPath))
@@ -126,7 +129,8 @@ def update_web(): #Update the webpage with new images
     with open('/var/www/html/library', 'w') as f:
         f.write(doc.render())
 
-def write_to_file(t): #Append warning message to log file
+#Append message to log file on which if any sensors has been tripped
+def write_to_file(t): 
     log = open("/var/www/html/log.txt", "a")
     log.writelines(t)
     log.write('\n')
@@ -143,7 +147,8 @@ while True:
     time.sleep(1)
 
     if PIR==0 and MAG==0:
-        print("Nope Nobody")
+        t = ("Nope Nobody",time.asctime())
+        #Begin live stream
         with camera:
             output = StreamingOutput()
             camera.start_recording(output, format='mjpeg')
