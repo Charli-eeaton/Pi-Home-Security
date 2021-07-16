@@ -1,7 +1,6 @@
 import RPi.GPIO as GPIO
 import socketserver
 import logging
-import thread
 import time
 import glob
 import os
@@ -17,6 +16,7 @@ camera = PiCamera()
 camera.framerate = 24
 camera.resolution='720x480'
 
+
 #Create a glob of all video & photos
 photos = glob.glob('media/photos/*.jpg')
 videos = glob.glob('media/videos/*.mp4')
@@ -24,8 +24,8 @@ videos = glob.glob('media/videos/*.mp4')
 #Initalise GPIO
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
-GPIO.setup(11, GPIO.IN)         #Read output from PIR motion sensor
-GPIO.setup(13, GPIO.IN)         #Read output from magnetic door switch
+GPIO.setup(8, GPIO.IN)         #Read output from PIR motion sensor
+GPIO.setup(40,GPIO.IN)         #Read output from magnetic door switch
 
 #Create webpage for livestreaming
 PAGE="""\
@@ -140,24 +140,25 @@ def write_to_file(t):
 #main
 while True:
     camera.start_preview()
-    PIR=GPIO.input(11)
-    MAG=GPIO.input(13)
+    PIR=GPIO.input(8)
+    MAG=GPIO.input(40)
     t = "NONE"
     local = ""
     time.sleep(1)
+    #Begin live stream
+    with camera:
+        output = StreamingOutput()
+        camera.start_recording(output, format='mjpeg')
+        try:
+            address = ('', 8000)
+            server = StreamingServer(address, StreamingHandler)
+            server.serve_forever()
+        finally:
+            camera.stop_recording()
 
     if PIR==0 and MAG==0:
         t = ("Nope Nobody",time.asctime())
-        #Begin live stream
-        with camera:
-            output = StreamingOutput()
-            camera.start_recording(output, format='mjpeg')
-            try:
-                address = ('', 8000)
-                server = StreamingServer(address, StreamingHandler)
-                server.serve_forever()
-            finally:
-                camera.stop_recording()
+        
 
     if PIR==1 or MAG==1:
 
