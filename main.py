@@ -3,6 +3,7 @@ import socketserver
 import logging
 import _thread
 import threading
+import picamera
 import time
 import glob
 import os
@@ -12,7 +13,6 @@ from picamera import PiCamera
 from dominate import document
 from dominate.tags import *
 from http import server
-
 
 camera = PiCamera()
 camera.framerate = 24
@@ -100,14 +100,24 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 #function for taking a still image
 def snapshot():
     local = "/var/www/html/media/photos/" + str(time.asctime()) + ".jpg"#path to save image with current Date & Time added
-    camera.capture(local)
+    camera.capture(local, use_video_port=True) #Use video port option allows snapshots without dropped frames
 
 def vidClip():
-    local = "/var/www/html/media/videos/" + str(time.asctime()) + ".h264"#path to save video with current Date & Time added
+    local = "/var/www/html/media/videos/" + str(time.asctime()) + ".h264"#path to save video with current Date & Time added. The Pi can only record in h264, this will need to be converted
+    camera.stop_recording()# Stop the stream
+    time.sleep(0.5)
     camera.start_recording(local)
     time.sleep(5) #How long of a clip to record
     camera.stop_recording()
-    os.system('for i in /var/www/html/media/videos/*.h264; do ffmpeg -i "$i" "${i%.*}.mp4"; done ; rm /var/www/html/media/videos/*.h264') #Convert H264 files to mp4 for web play
+
+    #Resume the livestream after stopping it to record the clip
+    camera.start_recording(output, format='mjpeg')
+
+    #Convert H264 files to mp4 for web play 
+    os.system('for i in /var/www/html/media/videos/*.h264; do ffmpeg -i "$i" "${i%.*}.mp4"; done ; rm /var/www/html/media/videos/*.h264') 
+    
+
+
 
 #Update the webpage with new images and video
 def update_web(): 
@@ -140,16 +150,19 @@ def write_to_file(t):
 
 #main
 def main():
+    camera.start_preview()
     while True:
-        camera.start_preview()
+        time.sleep(1)
+        update_web()
         PIR=GPIO.input(8)
         MAG=GPIO.input(40)
 
-        if PIR==0 and MAG==0:
-            t = ("Nope Nobody",time.asctime())
+        #uncomment no write nobody detected when niether sensor is tripped
+        #if PIR==0 and MAG==0:
+        #    t = ("Nope Nobody",time.asctime())
             
         #If either sensor is tripped
-        elif PIR==1 or MAG==1:
+        if PIR==1 or MAG==1:
             #camera.stop_recording()
 
             if PIR==1 and MAG==1: #if PIR sensor & MAG switch is high
@@ -162,12 +175,9 @@ def main():
             elif MAG==1: #if MAG switch is high write to log file
                 t = ("MAG OPEN AT ",time.asctime())
 
+            write_to_file(t)
             snapshot()
-            #vidClip()
-
-        write_to_file(t)
-        update_web()
-        time.sleep(1)
+            vidClip()
 
 
 #Start the main thread
