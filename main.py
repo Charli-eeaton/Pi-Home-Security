@@ -19,10 +19,6 @@ camera.framerate = 24
 camera.resolution='720x480'
 address = ('', 8000)
 
-#Create a glob of all video & photos
-photos = glob.glob('media/photos/*.jpg')
-videos = glob.glob('media/videos/*.mp4')
-
 #Initalise GPIO
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
@@ -115,15 +111,16 @@ def vidClip():
 
     #Convert H264 files to mp4 for web play 
     os.system('for i in /var/www/html/media/videos/*.h264; do ffmpeg -i "$i" "${i%.*}.mp4"; done ; rm /var/www/html/media/videos/*.h264') 
-    
-
 
 
 #Update the webpage with new images and video
 def update_web(): 
     with document(title='library') as doc:
         meta(name="viewport", content="width=device-width", scale="1.0") #set web page scale to that of the device
-        
+        #Create a glob of all photo & videos. Needed for web page generation
+        videos = glob.glob('media/videos/*.mp4')
+        photos = glob.glob('media/photos/*.jpg')   
+
         h1('Photos') 
         for path in photos: #auto generate web page with all the files in the photos folder
             humanReadPath = path.replace("media/photos/","")
@@ -153,7 +150,6 @@ def main():
     camera.start_preview()
     while True:
         time.sleep(1)
-        update_web()
         PIR=GPIO.input(8)
         MAG=GPIO.input(40)
 
@@ -178,6 +174,7 @@ def main():
             write_to_file(t)
             snapshot()
             vidClip()
+            update_web()
 
 
 #Start the main thread
