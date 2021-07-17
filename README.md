@@ -1,12 +1,11 @@
 # Pi-Home-Security
 An open project which uses a Pi as a home security device through the use of an Android app
 
-### Required software
-- Python
-- fswebcam
+### Required software ###
+- Python3
 - apache2
-- pip Dominate
+- pip3 Dominate
 
-### Required Hardware
-- Rapsberry pi
+### Required Hardware ###
+- Any Rapsberry pi
 - Android Phone or tablet
