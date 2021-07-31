@@ -1,7 +1,7 @@
 # Pi-Home-Security
 An open project which uses a Pi as a home security device through the use of an Android app
 
-### Required software ###
+### Required software on the Raspberry Pi ###
 - Python3
 - apache2
 - pip3 Dominate
@@ -10,6 +10,7 @@ An open project which uses a Pi as a home security device through the use of an 
 - Any Rapsberry pi
 - Android Phone or tablet
 
+### On boot ###
 To get the Python file to run on boot of the Raspberry Pi we just need to edit one file.
 Start by opening your rc.local file with your text editor of choice or with the comand:
 
