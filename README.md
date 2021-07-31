@@ -18,9 +18,11 @@ Start by opening your rc.local file with your text editor of choice or with the 
 
 Once editing this file add the following to the bottom of the file:
 
-``#Run python main on boot
+```
+#Run python main on boot
 python3 /var/www/html/main.py &
-exit 0``
+exit 0
+```
 
 Now just reboot with the following and the main file will now be run on boot:
 
